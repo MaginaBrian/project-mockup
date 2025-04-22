@@ -2,19 +2,6 @@ import { useState, useEffect } from 'react';
 import BlogList from './components/BlogList';
 import BlogForm from './components/BlogForm';
 
-const initialPosts = [
-  {
-    id: 1,
-    title: "First Post",
-    content: "This is the content of the first blog post."
-  },
-  {
-    id: 2,
-    title: "Second Post",
-    content: "This is the content of the second blog post."
-  }
-];
-
 const App = () => {
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState(null);
@@ -24,10 +11,15 @@ const App = () => {
     fetchPosts();
   }, []);
 
-  const fetchPosts = () => {
+  const fetchPosts = async () => {
     setLoading(true);
     try {
-      setPosts(initialPosts);
+      const response = await fetch('https://project-mockup-dbjson.vercel.app/posts');
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setPosts(data);
       setError(null);
     } catch (error) {
       setError('Failed to fetch posts. Please try again.');
@@ -37,14 +29,20 @@ const App = () => {
     }
   };
 
-  const createPost = (post) => {
+  const createPost = async (post) => {
     setLoading(true);
     try {
-      const newPost = {
-        id: posts.length + 1,
-        title: post.title,
-        content: post.content
-      };
+      const response = await fetch('https://project-mockup-dbjson.vercel.app/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(post),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create post');
+      }
+      const newPost = await response.json();
       setPosts([newPost, ...posts]);
       setError(null);
     } catch (error) {
@@ -55,10 +53,21 @@ const App = () => {
     }
   };
 
-  const updatePost = (id, updatedPost) => {
+  const updatePost = async (id, updatedPost) => {
     setLoading(true);
     try {
-      setPosts(posts.map(post => (post.id === id ? { ...post, ...updatedPost } : post)));
+      const response = await fetch(`https://project-mockup-dbjson.vercel.app/posts/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedPost),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update post');
+      }
+      const updated = await response.json();
+      setPosts(posts.map(post => (post.id === id ? updated : post)));
       setError(null);
     } catch (error) {
       setError('Failed to update post. Please try again.');
@@ -68,9 +77,15 @@ const App = () => {
     }
   };
 
-  const deletePost = (id) => {
+  const deletePost = async (id) => {
     setLoading(true);
     try {
+      const response = await fetch(`https://project-mockup-dbjson.vercel.app/posts/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete post');
+      }
       setPosts(posts.filter(post => post.id !== id));
       setError(null);
     } catch (error) {
